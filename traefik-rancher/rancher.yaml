@@ -33,3 +33,19 @@ spec:
             cpu: "100m"
         ports:
         - containerPort: 80
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-ingress
+  namespace: default 
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+  - match: Host(`web.spcn22.local`)
+    kind: Rule
+    services:
+    - name: rancher
+      port: 80

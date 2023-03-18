@@ -41,95 +41,29 @@ _________________________________________________________________________
     
     #After that, config path of minikube on Environment Variables (กำหนด path ของ minikub บน Environment Variables)
 
-    > minikube start --driver=hyperkit
-    #Start minikube by hyperkit (เริ่มต้น minikube ด้วย hyperkit)
-    ```
-3. Create **minikube**
+3. Create **minikube** and allow aceess to **Kubernetes App**  
     ```shell
+    > minikube start
     > minikube dashboard
+
+    > minikube tunnel
     ```
 
 _________________________________________________________________________
 ## **Step** #Traefik Deploy on [ MiniKube ]
 _________________________________________________________________________
 
-1. Install traefik, ให้ศึกษาการติดตั้ง Traefik แบบ Step by step follows this=> kuberplay-tragik
+1. Install traefik, ให้ศึกษาการติดตั้ง Traefik แบบ Step by step follows this=> [kuberplay-tragik](https://github.com/iamapinan/kubeplay-traefik)
 
-  For Download helm : https://github.com/helm/helm/releases/tag/v3.11.2
+<ins>For Download helm</ins> :
+> https://github.com/helm/helm/releases/tag/v3.11.2
 
-โดยสำหรับ helm ให้ run ผ่าน powershell on Windows จากนั้นทำการแก้ไข file.ymal ทุกไฟล์ที่มีระบุ namespace กำหนดให้เป็น default
-```
+โดยสำหรับ helm ให้ run ผ่าน powershell on Windows จากนั้นทำการแก้ไข ```file.ymal``` ทุกไฟล์ที่มีระบุ **namespace** กำหนดให้เป็น default
+```shell
+##Set namespace
 namespace: default
 ``` 
 จากนั้นมีการกำหนด path ของ helm บน Environment Variables 
-
-File all yaml :
-<details><summary>CLICK show code : <ins>ingress-deployment.yaml</ins></summary>
-<p>
-
-```ruby
-apiVersion: traefik.containo.us/v1alpha1
-kind: IngressRoute
-metadata:
-  name: traefik-ingress
-  namespace: default 
-spec:
-  entryPoints:
-    - web
-    - websecure
-  routes:
-  - match: Host(`traefik.spcn22.local`)
-    kind: Rule
-    services:
-    - name: nginx
-      port: 80
-```
-<p>
-</details>
-
-<details><summary>CLICK show code : <ins>nginx-deployment.yaml</ins></summary>
-<p>
-
-```ruby
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: nginx-deployment
-  namespace: default
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: nginx
-  template:
-    metadata:
-      labels:
-        app: nginx
-    spec:
-      containers:
-      - name: nginx
-        image: nginx:latest
-        ports:
-        - containerPort: 80
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: nginx-service
-  labels:
-    name: nginx-service
-  namespace: default
-spec:
-  selector:
-    app: nginx
-  ports:
-  - name: http
-    port: 80
-    protocol: TCP
-    targetPort: 80
-```
-<p>
-</details>
 
 <details><summary>CLICK show code : <ins>traefik-dashboard.yaml</ins></summary>
 <p>
@@ -200,9 +134,9 @@ spec:
 
 * <ins>OUTPUT</ins> : After finsih Created  ```auth-secret``` and ```dashboard-secret.yml```, it's show
 
-![Add2secreat](https://user-images.githubusercontent.com/104758471/226076955-53c781dd-e2a4-41eb-9dd2-32a0960e2a76.jpg)
+![Add2secreat](https://user-images.githubusercontent.com/104758471/226095700-d6340859-3e51-4b02-a06a-4d2b33ab280b.jpg)
 
-จากนั้นทำการ copy ```user``` ของ file ```dashboard-secret.yaml``` ไปเปลี่ยนที่ ```user``` ของ file ```traefik-dashboard.yaml```
+จากนั้นทำการ copy ที่ *user* ของ file ```dashboard-secret.yaml``` ไปเปลี่ยนที่ *user* ของ file ```traefik-dashboard.yaml```
 
 * file ```dashboard-secret.yaml``` (copy user)
 ![cop-UserDashsecreat2](https://user-images.githubusercontent.com/104758471/226077479-bad79e84-2ad1-4f9e-baa1-ff1313e7dceb.jpg)
@@ -213,8 +147,6 @@ spec:
 ใช้สั่งต่อไปนี้เพื่อ Deploy traefik 
 ```shell
 > kubectl apply -f traefik-dashboard.yaml
-> kubectl apply -f nginx-deployment.yaml
-> kubectl apply -f ingress-deployment.yaml
 ```
 * <ins>SHOW</ins> : After finsih Traefik Deploy on Minikube
 ![out-traefik-spcn22local](https://user-images.githubusercontent.com/104758471/226078492-a267ec89-120d-439b-abb8-93d55224c6b1.jpg)
@@ -263,32 +195,7 @@ spec:
             cpu: "100m"
         ports:
         - containerPort: 80
-
-```
-</p>
-</details>
-
-2. เปลี่ยนแปลง file ```ingress-deployment.yaml``` ที่ spce ในส่วน routes ที่เป็น services ให้ตั้ง name เป็น rancher 
-เพื่อเป็นการดึงเอา service rancher มาใช้งานจาก file ```rancheer.yaml```
-
-```
-.
-.
-spec:
-  entryPoints:
-  .
-  routes:
-  - match: Host(`hostname`)
-    kind: Rule
-    services:
-    - name: rancher
-      port: 80
-```
-
-<details><summary>CLICK show code : <ins>rancheer.yaml</ins></summary>
-<p>
-
-```ruby
+---
 apiVersion: traefik.containo.us/v1alpha1
 kind: IngressRoute
 metadata:
@@ -311,5 +218,4 @@ spec:
 3. Deploy rancher
 ```
 kubectl apply -f rancheer.yaml
-kubectl apply -f nginx-deployment.yaml
 ```
