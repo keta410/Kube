@@ -21,7 +21,7 @@
 > https://github.com/iamapinan/kubeplay-traefik 
 
 _________________________________________________________________________
-## **Step** #Installation [Kubernetes] on Windows and Create [Minikube]
+## **Step** #Installation [ Kubernetes ] on Windows and Create  [ Minikube ]
 _________________________________________________________________________
 
 1. Install and Check verion **kubectl** on Windows 
@@ -29,30 +29,287 @@ _________________________________________________________________________
     Run Powershell ด้วยสถานะ Admin
 
     ```shell
-    $ curl.exe -LO "https://dl.k8s.io/release/v1.26.0/bin/windows/amd64/kubectl.exe"
+    > curl.exe -LO "https://dl.k8s.io/release/v1.26.0/bin/windows/amd64/kubectl.exe"
 
-    $ kubectl version --client
+    > kubectl version --client
     ```
 2. Install **minikube** on Windows by **Hyperkit**
 
     ```shell
-    $ New-Item -Path 'c:\' -Name 'minikube' -ItemType Directory -Force
+    > New-Item -Path 'c:\' -Name 'minikube' -ItemType Directory -Force
     Invoke-WebRequest -OutFile 'c:\minikube\minikube.exe' -Uri 'https://github.com/kubernetes/minikube/releases/latest/download/minikube-windows-amd64.exe' -UseBasicParsing
     
     #After that, config path of minikube on Environment Variables (กำหนด path ของ minikub บน Environment Variables)
 
-    $ minikube start --driver=hyperkit
+    > minikube start --driver=hyperkit
     #Start minikube by hyperkit (เริ่มต้น minikube ด้วย hyperkit)
     ```
 3. Create **minikube**
     ```shell
-    $ minikube dashboard
+    > minikube dashboard
     ```
-_________________________________________________________________________
-## **Step** #Traefik Deploy on [MiniKube]
-_________________________________________________________________________
 
 _________________________________________________________________________
-## **Step** #Web Deploy used Image [rancher/hello-world]
+## **Step** #Traefik Deploy on [ MiniKube ]
 _________________________________________________________________________
 
+1. Install traefik, ให้ศึกษาการติดตั้ง Traefik แบบ Step by step follows this=> kuberplay-tragik
+
+  For Download helm : https://github.com/helm/helm/releases/tag/v3.11.2
+
+โดยสำหรับ helm ให้ run ผ่าน powershell on Windows จากนั้นทำการแก้ไข file.ymal ทุกไฟล์ที่มีระบุ namespace กำหนดให้เป็น default
+```
+namespace: default
+``` 
+จากนั้นมีการกำหนด path ของ helm บน Environment Variables 
+
+File all yaml :
+<details><summary>CLICK show code : <ins>ingress-deployment.yaml</ins></summary>
+<p>
+
+```ruby
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-ingress
+  namespace: default 
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+  - match: Host(`traefik.spcn22.local`)
+    kind: Rule
+    services:
+    - name: nginx
+      port: 80
+```
+<p>
+</details>
+
+<details><summary>CLICK show code : <ins>nginx-deployment.yaml</ins></summary>
+<p>
+
+```ruby
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:latest
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-service
+  labels:
+    name: nginx-service
+  namespace: default
+spec:
+  selector:
+    app: nginx
+  ports:
+  - name: http
+    port: 80
+    protocol: TCP
+    targetPort: 80
+```
+<p>
+</details>
+
+<details><summary>CLICK show code : <ins>traefik-dashboard.yaml</ins></summary>
+<p>
+
+```ruby
+apiVersion: traefik.containo.us/v1alpha1
+kind: Middleware
+metadata:
+  name: traefik-basic-authen
+  namespace: default
+spec:
+  basicAuth:
+    secret: dashboard-auth-secret
+    removeHeader: true
+---
+apiVersion: v1
+data:
+  users: dXNlcjokMnkkMDUkR0Z3WUZKWkVIdUZlVEoxb3hOMnB0dXBURXpIWEN4djRZenQ4STV3T1kxcTFsZmZxY2M5T0cKCg==
+kind: Secret
+metadata:
+  name: dashboard-auth-secret
+  namespace: default
+---
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-dashboard
+  namespace: default
+  annotations:
+    kubernetes.io/ingress.class: traefik
+    traefik.ingress.kubernetes.io/router.middlewares: traefik-basic-authen
+spec:
+  entryPoints:
+    - websecure
+  routes:
+    - match: Host(`traefik.spcn22.local`) && (PathPrefix(`/dashboard`) || PathPrefix(`/api`))
+      kind: Rule
+      middlewares:
+        - name: traefik-basic-authen
+          namespace: default
+      services:
+        - name: api@internal
+          kind: TraefikService
+```
+<p>
+</details>
+
+ใช้คำสั่งต่อไปนี้ผ่าน wsl(Ubuntu) on Windows เพื่อสร้าง file ของ ```auth-secret``` และ ```dashboard-secret.yml``` 
+```linux
+ > htpasswd -nB user | tee auth-secret    #Set password(กำหนด password)
+
+ > kubectl create secret generic -n traefik dashboard-auth-secret --from-file=users=auth-secret -o yaml --dry-run=client | tee dashboard-secret.yaml
+ #Create `dashboard-secret.yml`
+```
+
+* <ins>OUTPUT</ins> : After finsih Created ```auth-secret```
+  ![htpasswd-setPSW](https://user-images.githubusercontent.com/104758471/225998200-9906106f-286c-4b9d-b4cc-6927f2afde93.jpg)
+
+* <ins>OUTPUT</ins> : After finsih Created ```dashboard-secret.yml```
+  ![minikube-dashboard-dockerAuto](https://user-images.githubusercontent.com/104758471/226010402-f2c4a94b-f277-47f5-b035-1799fe0f8e09.png)
+
+#กรณีที่เจอ ```Command : 'htpasswd' not found```
+
+ต้องทำการติดตั้ง *apache2-utils*
+* ติดตั้ง apache2-utils => ```sudo apt install apache2-utils```
+![image](https://user-images.githubusercontent.com/104758471/226003594-a9ecf798-4b7f-44d4-bd00-e4caf367d2b9.png)
+จากภาพ กรอก Y ในการทำงานต่อแล้ว Run คำสั่งตามลำดับต่อไป
+
+* <ins>OUTPUT</ins> : After finsih Created  ```auth-secret``` and ```dashboard-secret.yml```, it's show
+
+![Add2secreat](https://user-images.githubusercontent.com/104758471/226076955-53c781dd-e2a4-41eb-9dd2-32a0960e2a76.jpg)
+
+จากนั้นทำการ copy ```user``` ของ file ```dashboard-secret.yaml``` ไปเปลี่ยนที่ ```user``` ของ file ```traefik-dashboard.yaml```
+
+* file ```dashboard-secret.yaml``` (copy user)
+![cop-UserDashsecreat2](https://user-images.githubusercontent.com/104758471/226077479-bad79e84-2ad1-4f9e-baa1-ff1313e7dceb.jpg)
+
+* file ```traefik-dashboard.yaml``` (paste user)
+![pastUserToTraefik-dash2](https://user-images.githubusercontent.com/104758471/226078199-f1bce821-bcf8-405a-8b3b-baf8f74bc757.jpg)
+
+ใช้สั่งต่อไปนี้เพื่อ Deploy traefik 
+```shell
+> kubectl apply -f traefik-dashboard.yaml
+> kubectl apply -f nginx-deployment.yaml
+> kubectl apply -f ingress-deployment.yaml
+```
+* <ins>SHOW</ins> : After finsih Traefik Deploy on Minikube
+![out-traefik-spcn22local](https://user-images.githubusercontent.com/104758471/226078492-a267ec89-120d-439b-abb8-93d55224c6b1.jpg)
+
+_________________________________________________________________________
+## **Step** #Web Deploy used Image [ rancher/hello-world ]
+_________________________________________________________________________
+
+1. สร้างไฟล์ ```rancheer.yaml```
+<details><summary>CLICK show code : <ins>rancheer.yaml</ins></summary>
+<p>
+
+```ruby
+apiVersion: v1
+kind: Service
+metadata:
+  name: rancher
+  namespace: default
+spec:
+  selector:
+    app: rancher
+  ports:
+  - port: 80
+    targetPort: 80
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rancher
+spec:
+  selector:
+    matchLabels:
+      app: rancher
+  template:
+    metadata:
+      labels:
+        app: rancher
+    spec:
+      containers:
+      - name: rancher
+        image: rancher/hello-world
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+        ports:
+        - containerPort: 80
+
+```
+</p>
+</details>
+
+2. เปลี่ยนแปลง file ```ingress-deployment.yaml``` ที่ spce ในส่วน routes ที่เป็น services ให้ตั้ง name เป็น rancher 
+เพื่อเป็นการดึงเอา service rancher มาใช้งานจาก file ```rancheer.yaml```
+
+```
+.
+.
+spec:
+  entryPoints:
+  .
+  routes:
+  - match: Host(`hostname`)
+    kind: Rule
+    services:
+    - name: rancher
+      port: 80
+```
+
+<details><summary>CLICK show code : <ins>rancheer.yaml</ins></summary>
+<p>
+
+```ruby
+apiVersion: traefik.containo.us/v1alpha1
+kind: IngressRoute
+metadata:
+  name: traefik-ingress
+  namespace: default 
+spec:
+  entryPoints:
+    - web
+    - websecure
+  routes:
+  - match: Host(`spcn22.local`)
+    kind: Rule
+    services:
+    - name: rancher
+      port: 80
+```
+</p>
+</details>
+
+3. Deploy rancher
+```
+kubectl apply -f rancheer.yaml
+kubectl apply -f nginx-deployment.yaml
+```
