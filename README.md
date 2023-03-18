@@ -5,14 +5,14 @@
 
 **Ref** :
 
-<ins>Traefik</ins>
-* > https://github.com/iamapinan/kubeplay-traefik 
+* >https://github.com/iamapinan/kubeplay-traefik 
+ (**Traefik**) 
 
-<ins>Kubectl</ins>
 * > https://kubernetes.io/docs/tasks/tools/install-kubectl-windows/
+ (**Kubectl**) 
 
-<ins>Minikube</ins>
 * > https://minikube.sigs.k8s.io/docs/start/ 
+ (**Minikube**) 
 _________________________________________________________________
 
 ## **Contents Kube (สารบัญเนื้อหา Kube)**
@@ -22,8 +22,8 @@ No. |English Title (ชื่อเรื่องภาษาอังกฤษ
 1)|[Step #Installation [ Kubernetes ] on Windows and Create  [ Minikube ]](https://github.com/keta410/Kube#step-installation--kubernetes--on-windows-and-create---minikube-)|ขั้นตอน การติดตั้ง [Kubernetes] บน Windows and Create [ Minikube ]|
 2)|[Step #Traefik Deploy on [ MiniKube ]](https://github.com/keta410/Kube#step-traefik-deploy-on--minikube-)|ขั้นตอน Traefik Deploy บน [ MiniKube ]|
 3)|[Step #Web Deploy used Image [ rancher/hello-world ]](https://github.com/keta410/Kube#step-web-deploy-used-image--rancherhello-world-)|ขั้นตอน Web Deploy ใช้ Image [ rancher/hello-world ]|
-4)|[Set file hosts on Windows]()|ตั้งค่า file hosts บน Windows|
-5)|[Expected Results]()|ผลที่คาดว่าจะได้รับ|
+4)|[Set file hosts on Windows](https://github.com/keta410/Kube#set-file-hosts-on-windows)|ตั้งค่า file hosts บน Windows|
+5)|[Expected Results](https://github.com/keta410/Kube#expected-results)|ผลที่คาดว่าจะได้รับ|
 _________________________________________________________________________
 
 ## **Step** #Installation [ Kubernetes ] on Windows and Create [ Minikube ]
